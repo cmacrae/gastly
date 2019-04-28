@@ -23,18 +23,24 @@ func main() {
 		log.Fatal(err)
 	}
 
+	retryOptions := gastly.RetryOptions{
+		Max:             3,
+		WaitMaxSecs:     6,
+		WaitMinSecs:     1,
+		BackoffStepSecs: 2,
+	}
+
 	for range time.NewTicker(1 * time.Second).C {
-		resp, err := p.Get("http://icanhazip.com", nil)
+		resp, err := p.Get("http://icanhazip.com", nil, retryOptions)
 		if err != nil {
 			log.Fatal(err)
 		}
 
+        defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		defer resp.Body.Close()
 
 		code := resp.StatusCode
 		fmt.Println(fmt.Sprintf("%v%v - %v\n", string(body), code, http.StatusText(code)))

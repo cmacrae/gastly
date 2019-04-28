@@ -13,6 +13,8 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 const ghostAPI = "https://ghostproxies.com/proxies/api.json"
@@ -40,6 +42,14 @@ type Proxy struct {
 	PanelPass   string `json:"panel_pass"`
 }
 
+// RetryOptions is a set of parameters expressing HTTP retry behavior
+type RetryOptions struct {
+	Max             int
+	WaitMinSecs     int
+	WaitMaxSecs     int
+	BackoffStepSecs int
+}
+
 // RandProxy returns a random proxy from a Provider's list of proxies
 func (p Provider) RandProxy() Proxy {
 	s := rand.NewSource(time.Now().Unix())
@@ -49,35 +59,45 @@ func (p Provider) RandProxy() Proxy {
 	return p.Data[rand].Proxy
 }
 
-// NewClient returns a http.Client configured to use a random proxy
-func (p Provider) NewClient(req *http.Request) (*http.Client, error) {
+// NewClient returns a retryablehttp.Client configured to use a random proxy
+func (p Provider) NewClient(req *retryablehttp.Request, opts RetryOptions) (*retryablehttp.Client, error) {
 	proxy := p.RandProxy()
 	proxyURL, err := url.ParseRequestURI(fmt.Sprintf("http://%s:%s", proxy.IP, proxy.PortNum))
 	if err != nil {
-		return &http.Client{}, fmt.Errorf("%v", err)
+		return &retryablehttp.Client{}, fmt.Errorf("%v", err)
 	}
 
-	return &http.Client{
+	client := retryablehttp.NewClient()
+	client.Logger = nil
+	client.RetryMax = opts.Max
+	client.RetryWaitMax = time.Second * time.Duration(opts.WaitMaxSecs)
+	client.RetryWaitMin = time.Second * time.Duration(opts.WaitMinSecs)
+
+	client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
+		return (time.Second * time.Duration(opts.BackoffStepSecs)) * time.Duration((attemptNum))
+	}
+
+	client.HTTPClient = &http.Client{
+		Timeout: (5 * time.Second),
 		Transport: &http.Transport{
 			Proxy:              http.ProxyURL(proxyURL),
 			ProxyConnectHeader: req.Header,
-		},
-		Timeout: (5 * time.Second),
-	}, nil
+		}}
+
+	return client, nil
 }
 
-// Get performs an HTTP GET request against the given url, with any headers provided.
+// Get performs an HTTP GET request against the given url, with any headers and retry options provided.
 // It will use a random proxy to do so
-func (p Provider) Get(url string, header http.Header) (http.Response, error) {
-	req, err := http.NewRequest("GET", url, nil)
+func (p Provider) Get(url string, header http.Header, o RetryOptions) (http.Response, error) {
+	req, err := retryablehttp.NewRequest("GET", url, nil)
 	if err != nil {
 		return http.Response{}, err
 	}
 
 	req.Header = header
 
-	// Set the client to use the proxied internal client
-	client, err := p.NewClient(req)
+	client, err := p.NewClient(req, o)
 	if err != nil {
 		return http.Response{}, err
 	}
