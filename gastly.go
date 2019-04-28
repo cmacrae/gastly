@@ -120,7 +120,7 @@ func (p Provider) Get(url string, header http.Header, o RetryOptions) (http.Resp
 	}
 
 	// TODO: instrument response codes
-	httpReqs.WithLabelValues(strconv.Itoa(resp.StatusCode), "GET").Add(1)
+	httpReqs.WithLabelValues(strconv.Itoa(resp.StatusCode), "GET").Inc()
 
 	return *resp, nil
 }
