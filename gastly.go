@@ -68,17 +68,13 @@ func (p Provider) NewClient(req *http.Request) (*http.Client, error) {
 
 // Get performs an HTTP GET request against the given url, with any headers provided.
 // It will use a random proxy to do so
-func (p Provider) Get(url string, headers map[string]string) (http.Response, error) {
+func (p Provider) Get(url string, header http.Header) (http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return http.Response{}, err
 	}
 
-	if headers != nil {
-		for k, v := range headers {
-			req.Header.Set(k, v)
-		}
-	}
+	req.Header = header
 
 	// Set the client to use the proxied internal client
 	client, err := p.NewClient(req)
