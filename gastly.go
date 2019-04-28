@@ -12,12 +12,24 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const ghostAPI = "https://ghostproxies.com/proxies/api.json"
+
+// Prometheus metrics
+var httpReqs = prometheus.NewCounterVec(
+	prometheus.CounterOpts{
+		Name: "gastly_external_http_requests_total",
+		Help: "How many external HTTP requests processed, partitioned by status code and HTTP method.",
+	},
+	[]string{"code", "method"},
+)
 
 // Provider set of account proxy data returned from the GhostProxies API
 type Provider struct {
@@ -107,6 +119,9 @@ func (p Provider) Get(url string, header http.Header, o RetryOptions) (http.Resp
 		return http.Response{}, err
 	}
 
+	// TODO: instrument response codes
+	httpReqs.WithLabelValues(strconv.Itoa(resp.StatusCode), "GET").Add(1)
+
 	return *resp, nil
 }
 
@@ -125,4 +140,11 @@ func NewProvider(key string) (Provider, error) {
 	defer r.Body.Close()
 	json.NewDecoder(r.Body).Decode(&p)
 	return p, nil
+}
+
+// ServeMetrics provides a Prometheus endpoint for monitoring/observability
+func ServeMetrics(port int) {
+	prometheus.MustRegister(httpReqs)
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 }
