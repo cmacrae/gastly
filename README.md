@@ -104,4 +104,11 @@ gastly_external_http_requests_total{code="429",method="GET",proxy_ip="90.123.45.
 gastly_external_http_requests_total{code="429",method="GET",proxy_ip="45.12.90.45"} 711
 gastly_external_http_requests_total{code="429",method="GET",proxy_ip="45.12.90.453"} 359
 gastly_external_http_requests_total{code="429",method="GET",proxy_ip="90.123.45.67"} 738
+# HELP gastly_proxy_count How many proxy servers are configured, partitioned by IP, status, city, region, and country.
+# TYPE gastly_proxy_count counter
+gastly_proxy_count{city="Chicago",country="US",ip="123.45.678.90",region="Illinois",status="online"} 1
+gastly_proxy_count{city="Chicago",country="US",ip="90.123.45.678",region="Illinois",status="online"} 1
+gastly_proxy_count{city="London",country="UK",ip="45.12.90.45",region="England",status="online"} 1
+gastly_proxy_count{city="London",country="UK",ip="45.12.90.453",region="England",status="online"} 1
+gastly_proxy_count{city="New York",country="US",ip="90.123.45.67"",region="New York",status="online"} 1
 ```

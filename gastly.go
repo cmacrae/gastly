@@ -17,18 +17,28 @@ import (
 
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 const ghostAPI = "https://ghostproxies.com/proxies/api.json"
 
 // Prometheus metrics
-var httpReqs = prometheus.NewCounterVec(
-	prometheus.CounterOpts{
-		Name: "gastly_external_http_requests_total",
-		Help: "How many external HTTP requests processed, partitioned by status code, method and proxy IP.",
-	},
-	[]string{"code", "method", "proxy_ip"},
+var (
+	httpReqs = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "gastly_external_http_requests_total",
+			Help: "How many external HTTP requests processed, partitioned by status code, method, and proxy IP.",
+		},
+		[]string{"code", "method", "proxy_ip"},
+	)
+
+	// TODO: Not sure a counter makes sense here...
+	proxyCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "gastly_proxy_count",
+			Help: "How many proxy servers are configured, partitioned by IP, status, city, region, and country.",
+		},
+		[]string{"ip", "status", "city", "region", "country"},
+	)
 )
 
 // Provider set of account proxy data returned from the GhostProxies API
@@ -138,12 +148,28 @@ func NewProvider(key string) (Provider, error) {
 	}
 	defer r.Body.Close()
 	json.NewDecoder(r.Body).Decode(&p)
+
+	for _, v := range p.Data {
+		proxyCount.WithLabelValues(
+			v.Proxy.IP,
+			v.Proxy.Status,
+			v.Proxy.CityName,
+			v.Proxy.RegionName,
+			v.Proxy.CountryCode,
+		).Inc()
+	}
+
 	return p, nil
 }
 
-// ServeMetrics provides a Prometheus endpoint for monitoring/observability
-func ServeMetrics(port int) {
-	prometheus.MustRegister(httpReqs)
-	http.Handle("/metrics", promhttp.Handler())
-	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+// ExposeCounter exposes the given counter for use when serving metrics
+func ExposeCounter(metric string) (*prometheus.CounterVec, error) {
+	switch metric {
+	case "httpReqs":
+		return httpReqs, nil
+	case "proxyCount":
+		return proxyCount, nil
+	}
+
+	return &prometheus.CounterVec{}, fmt.Errorf("unrecognised metric '%v'", metric)
 }
