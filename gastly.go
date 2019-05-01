@@ -28,7 +28,7 @@ var httpReqs = prometheus.NewCounterVec(
 		Name: "gastly_external_http_requests_total",
 		Help: "How many external HTTP requests processed, partitioned by status code and HTTP method.",
 	},
-	[]string{"code", "method"},
+	[]string{"code", "method", "proxy_ip"},
 )
 
 // Provider set of account proxy data returned from the GhostProxies API
@@ -72,11 +72,11 @@ func (p Provider) RandProxy() Proxy {
 }
 
 // NewClient returns a retryablehttp.Client configured to use a random proxy
-func (p Provider) NewClient(req *retryablehttp.Request, opts RetryOptions) (*retryablehttp.Client, error) {
+func (p Provider) NewClient(req *retryablehttp.Request, opts RetryOptions) (*retryablehttp.Client, string, error) {
 	proxy := p.RandProxy()
 	proxyURL, err := url.ParseRequestURI(fmt.Sprintf("http://%s:%s", proxy.IP, proxy.PortNum))
 	if err != nil {
-		return &retryablehttp.Client{}, fmt.Errorf("%v", err)
+		return &retryablehttp.Client{}, "", fmt.Errorf("%v", err)
 	}
 
 	client := retryablehttp.NewClient()
@@ -96,7 +96,7 @@ func (p Provider) NewClient(req *retryablehttp.Request, opts RetryOptions) (*ret
 			ProxyConnectHeader: req.Header,
 		}}
 
-	return client, nil
+	return client, proxy.IP, nil
 }
 
 // Get performs an HTTP GET request against the given url, with any headers and retry options provided.
@@ -109,7 +109,7 @@ func (p Provider) Get(url string, header http.Header, o RetryOptions) (http.Resp
 
 	req.Header = header
 
-	client, err := p.NewClient(req, o)
+	client, proxyIP, err := p.NewClient(req, o)
 	if err != nil {
 		return http.Response{}, err
 	}
@@ -119,8 +119,7 @@ func (p Provider) Get(url string, header http.Header, o RetryOptions) (http.Resp
 		return http.Response{}, err
 	}
 
-	// TODO: instrument response codes
-	httpReqs.WithLabelValues(strconv.Itoa(resp.StatusCode), "GET").Inc()
+	httpReqs.WithLabelValues(strconv.Itoa(resp.StatusCode), "GET", proxyIP).Inc()
 
 	return *resp, nil
 }
