@@ -87,7 +87,21 @@ $ ./example
 ### Metrics
 ```
 $ curl -s localhost:3000/metrics | fgrep gastly
-# HELP gastly_external_http_requests_total How many external HTTP requests processed, partitioned by status code and HTTP method.
+# HELP gastly_external_http_requests_total How many external HTTP requests processed, partitioned by status code, method and proxy IP
 # TYPE gastly_external_http_requests_total counter
-gastly_external_http_requests_total{code="200",method="GET"} 6
+gastly_external_http_requests_total{code="200",method="GET",proxy_ip="123.45.678.90"} 901
+gastly_external_http_requests_total{code="200",method="GET",proxy_ip="90.123.45.678"} 804
+gastly_external_http_requests_total{code="200",method="GET",proxy_ip="45.12.90.45"} 885
+gastly_external_http_requests_total{code="200",method="GET",proxy_ip="45.12.90.453"} 620
+gastly_external_http_requests_total{code="200",method="GET",proxy_ip="90.123.45.67"} 690
+gastly_external_http_requests_total{code="404",method="GET",proxy_ip="123.45.678.90"} 19
+gastly_external_http_requests_total{code="404",method="GET",proxy_ip="90.123.45.678"} 18
+gastly_external_http_requests_total{code="404",method="GET",proxy_ip="45.12.90.45"} 20
+gastly_external_http_requests_total{code="404",method="GET",proxy_ip="45.12.90.453"} 12
+gastly_external_http_requests_total{code="404",method="GET",proxy_ip="90.123.45.67"} 15
+gastly_external_http_requests_total{code="429",method="GET",proxy_ip="123.45.678.90"} 745
+gastly_external_http_requests_total{code="429",method="GET",proxy_ip="90.123.45.678"} 709
+gastly_external_http_requests_total{code="429",method="GET",proxy_ip="45.12.90.45"} 711
+gastly_external_http_requests_total{code="429",method="GET",proxy_ip="45.12.90.453"} 359
+gastly_external_http_requests_total{code="429",method="GET",proxy_ip="90.123.45.67"} 738
 ```

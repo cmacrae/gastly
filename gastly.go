@@ -26,7 +26,7 @@ const ghostAPI = "https://ghostproxies.com/proxies/api.json"
 var httpReqs = prometheus.NewCounterVec(
 	prometheus.CounterOpts{
 		Name: "gastly_external_http_requests_total",
-		Help: "How many external HTTP requests processed, partitioned by status code and HTTP method.",
+		Help: "How many external HTTP requests processed, partitioned by status code, method and proxy IP.",
 	},
 	[]string{"code", "method", "proxy_ip"},
 )
