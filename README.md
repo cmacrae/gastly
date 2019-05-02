@@ -67,20 +67,20 @@ func main() {
 	}
 }
 
-
 // ServeMetrics provides a Prometheus endpoint for monitoring/observability
 func serveMetrics(port int) error {
 	// Expose metrics from gastly so they can be served
-	httpReqs, err := gastly.ExposeCounter("httpReqs")
-	if err != nil {
-		return err
+	opts := &gastly.Metrics{
+		RequestCounter: true,
+		ProxyCounter:   true,
 	}
-	proxyCount, err := gastly.ExposeCounter("proxyCount")
-	if err != nil {
-		return err
+
+	metrics := opts.Expose()
+
+	for _, v := range metrics {
+		prometheus.MustRegister(v)
 	}
-	prometheus.MustRegister(httpReqs)
-	prometheus.MustRegister(proxyCount)
+
 	http.Handle("/metrics", promhttp.Handler())
 	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 

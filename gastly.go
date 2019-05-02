@@ -72,6 +72,27 @@ type RetryOptions struct {
 	BackoffStepSecs int
 }
 
+// Metrics is a set of controllers for the metrics gastly exposes
+type Metrics struct {
+	RequestCounter bool
+	ProxyCounter   bool
+}
+
+// Expose passes up Prometheus metrics to the caller, based on control switches
+// which dictate what metrics the caller wishes to use
+func (m Metrics) Expose() []*prometheus.CounterVec {
+	var exposed []*prometheus.CounterVec
+	if m.RequestCounter {
+		exposed = append(exposed, httpReqs)
+	}
+
+	if m.ProxyCounter {
+		exposed = append(exposed, proxyCount)
+	}
+
+	return exposed
+}
+
 // RandProxy returns a random proxy from a Provider's list of proxies
 func (p Provider) RandProxy() Proxy {
 	s := rand.NewSource(time.Now().Unix())
@@ -160,16 +181,4 @@ func NewProvider(key string) (Provider, error) {
 	}
 
 	return p, nil
-}
-
-// ExposeCounter exposes the given counter for use when serving metrics
-func ExposeCounter(metric string) (*prometheus.CounterVec, error) {
-	switch metric {
-	case "httpReqs":
-		return httpReqs, nil
-	case "proxyCount":
-		return proxyCount, nil
-	}
-
-	return &prometheus.CounterVec{}, fmt.Errorf("unrecognised metric '%v'", metric)
 }
