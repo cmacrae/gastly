@@ -21,6 +21,8 @@ import (
 	"time"
 
 	"github.com/cmacrae/gastly"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Serve Prometheus metrics on port 3000
