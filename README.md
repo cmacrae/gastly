@@ -5,7 +5,7 @@
 ## Features
 - Automatic proxy retrieval/setup
 - Automatic HTTP retries, with configurable behavior
-- Prometheus metrics for requests performed by `gastly`
+- Prometheus metrics
 
 ## Example
 ### Implementation
@@ -25,7 +25,11 @@ import (
 
 // Serve Prometheus metrics on port 3000
 func init() {
-	go gastly.ServeMetrics(3000)
+	go func() {
+		if err := serveMetrics(3000); err != nil {
+			log.Printf("Unable to serve metric: %v\n", err)
+		}
+	}()
 }
 
 func main() {
@@ -59,6 +63,26 @@ func main() {
 		code := resp.StatusCode
 		fmt.Println(fmt.Sprintf("%v%v - %v\n", string(body), code, http.StatusText(code)))
 	}
+}
+
+
+// ServeMetrics provides a Prometheus endpoint for monitoring/observability
+func serveMetrics(port int) error {
+	// Expose metrics from gastly so they can be served
+	httpReqs, err := gastly.ExposeCounter("httpReqs")
+	if err != nil {
+		return err
+	}
+	proxyCount, err := gastly.ExposeCounter("proxyCount")
+	if err != nil {
+		return err
+	}
+	prometheus.MustRegister(httpReqs)
+	prometheus.MustRegister(proxyCount)
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+
+	return nil
 }
 ```
 
