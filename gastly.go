@@ -12,7 +12,6 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -150,7 +149,7 @@ func (p Provider) Get(url string, header http.Header, o RetryOptions) (http.Resp
 		return http.Response{}, err
 	}
 
-	httpReqs.WithLabelValues(strconv.Itoa(resp.StatusCode), "GET", proxyIP).Inc()
+	httpReqs.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode), "GET", proxyIP).Inc()
 
 	return *resp, nil
 }

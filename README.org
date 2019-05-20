@@ -1,15 +1,15 @@
-<p align="center">
-  <img src="https://i.imgur.com/TVwMiNN.png">
-</p>
+[[https://i.imgur.com/TVwMiNN.png]]
 
-## Features
-- Automatic proxy retrieval/setup
-- Automatic HTTP retries, with configurable behavior
-- Prometheus metrics
+* Features
+  - Automatic proxy retrieval/setup
+  - Automatic HTTP retries, with configurable behavior
+  - Prometheus metrics
 
-## Example
-### Implementation
-```go
+* Example
+** Implementation
+   The following example can be written out to an example program using ~make example~.  
+   This you can then use ~cd example ; go run main.go~ to run this (you'll need to export a ~GHOST_PROXIES_KEY~ environment variable for it to function).
+#+begin_src go :tangle example/main.go
 package main
 
 import (
@@ -86,11 +86,16 @@ func serveMetrics(port int) error {
 
 	return nil
 }
-```
+#+end_src
 
-### Output
-```
-$ ./example
+** Output
+#+begin_example
+$ make example
+Tangled 1 code block from README.org
+See the example implementation in the 'example' directory!
+
+$ export GHOST_PROXIES_KEY=<your key here>
+$ cd example ; go run main.go
 123.45.678.90
 200 - OK
 
@@ -108,10 +113,10 @@ $ ./example
 
 123.45.678.90
 200 - OK
-```
+#+end_example
 
-### Metrics
-```
+** Metrics
+#+begin_example
 $ curl -s localhost:3000/metrics | fgrep gastly
 # HELP gastly_external_http_requests_total How many external HTTP requests processed, partitioned by status code, method and proxy IP
 # TYPE gastly_external_http_requests_total counter
@@ -137,4 +142,4 @@ gastly_proxy_count{city="Chicago",country="US",ip="90.123.45.678",region="Illino
 gastly_proxy_count{city="London",country="UK",ip="45.12.90.45",region="England",status="online"} 1
 gastly_proxy_count{city="London",country="UK",ip="45.12.90.453",region="England",status="online"} 1
 gastly_proxy_count{city="New York",country="US",ip="90.123.45.67"",region="New York",status="online"} 1
-```
+#+end_example
