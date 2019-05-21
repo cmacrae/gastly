@@ -8,7 +8,7 @@
 * Example
 ** Implementation
    The following example can be written out to an example program using ~make example~.  
-   This you can then use ~cd example ; go run main.go~ to run this (you'll need to export a ~GHOST_PROXIES_KEY~ environment variable for it to function).
+   You can then use ~cd example ; go run main.go~ to run it (you'll need to export a ~GHOST_PROXIES_KEY~ environment variable for it to function).
 #+begin_src go :tangle example/main.go
 package main
 
