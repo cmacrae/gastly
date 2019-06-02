@@ -1,5 +1,9 @@
 [[https://i.imgur.com/TVwMiNN.png]]
 
+* About
+Since GhostProxies shut down, this library is only useful as a reference implementation.  
+Please see [[https://github.com/cmacrae/haunter][cmacrae/haunter]] for the evolution of this library!
+
 * Features
   - Automatic proxy retrieval/setup
   - Automatic HTTP retries, with configurable behavior
